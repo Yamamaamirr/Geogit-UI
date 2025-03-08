@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Hide scrollbars but keep functionality */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+/* GitHub dark theme variables */
+:root {
+  --background: 215 21% 11%;
+  --foreground: 210 18% 85%;
+  --card: 215 21% 16%;
+  --card-foreground: 210 18% 85%;
+  --popover: 215 21% 16%;
+  --popover-foreground: 210 18% 85%;
+  --primary: 212 92% 45%;
+  --primary-foreground: 210 18% 85%;
+  --secondary: 215 14% 34%;
+  --secondary-foreground: 210 18% 85%;
+  --muted: 215 15% 15%;
+  --muted-foreground: 210 18% 60%;
+  --accent: 212 12% 21%;
+  --accent-foreground: 210 18% 85%;
+  --destructive: 355 70% 60%;
+  --destructive-foreground: 210 18% 85%;
+  --border: 212 12% 21%;
+  --input: 215 14% 34%;
+  --ring: 212 92% 45%;
+  --radius: 0.5rem;
+}
+
