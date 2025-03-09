@@ -1,22 +1,23 @@
-import PropTypes from "prop-types"
-import { FileText, FileCode, FileJson, FileImage, FileArchive, FileCog, FileIcon, Map, Globe } from "lucide-react"
+import PropTypes from "prop-types";
+import { FileText, FileCode, FileJson, FileImage, FileArchive, FileCog, FileIcon, Map, Globe } from "lucide-react";
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Map file extensions to icons
 const getFileIcon = (fileName) => {
-  const extension = fileName.split(".").pop().toLowerCase()
+  const extension = fileName.split(".").pop().toLowerCase();
 
   switch (extension) {
     case "js":
     case "jsx":
     case "ts":
     case "tsx":
-      return <FileCode className="w-4 h-4 text-yellow-500" />
+      return <FileCode className="w-4 h-4 text-yellow-500" />;
     case "json":
     case "geojson":
-      return <FileJson className="w-4 h-4 text-green-500" />
+      return <FileJson className="w-4 h-4 text-green-500" />;
     case "md":
     case "txt":
-      return <FileText className="w-4 h-4 text-blue-400" />
+      return <FileText className="w-4 h-4 text-blue-400" />;
     case "png":
     case "jpg":
     case "jpeg":
@@ -24,7 +25,7 @@ const getFileIcon = (fileName) => {
     case "gif":
     case "tif":
     case "tiff":
-      return <FileImage className="w-4 h-4 text-purple-400" />
+      return <FileImage className="w-4 h-4 text-purple-400" />;
     case "zip":
     case "rar":
     case "tar":
@@ -32,28 +33,36 @@ const getFileIcon = (fileName) => {
     case "shp":
     case "shx":
     case "dbf":
-      return <FileArchive className="w-4 h-4 text-orange-400" />
+      return <FileArchive className="w-4 h-4 text-orange-400" />;
     case "yml":
     case "yaml":
     case "config":
     case "prj":
-      return <FileCog className="w-4 h-4 text-gray-400" />
+      return <FileCog className="w-4 h-4 text-gray-400" />;
     case "kml":
     case "kmz":
-      return <Globe className="w-4 h-4 text-blue-500" />
+      return <Globe className="w-4 h-4 text-blue-500" />;
     case "gpx":
     case "osm":
-      return <Map className="w-4 h-4 text-green-400" />
+      return <Map className="w-4 h-4 text-green-400" />;
     default:
-      return <FileIcon className="w-4 h-4 text-github-fgMuted" />
+      return <FileIcon className="w-4 h-4 text-github-fgMuted" />;
   }
-}
+};
 
 export const FileItem = ({ file, path, onContextMenu, level }) => {
+  const navigate = useNavigate(); // Initialize the navigate function
+
+  // Handle click event to navigate to MapPage
+  const handleClick = () => {
+    navigate('/map'); // Navigate to the MapPage
+  };
+
   return (
     <li
       className="group flex items-center py-1.5 px-2 hover:bg-github-navHighlight cursor-pointer transition-colors border-b border-github-border/10 last:border-b-0"
       onContextMenu={(e) => onContextMenu(e, file)}
+      onClick={handleClick} // Add onClick handler
     >
       <div className="flex items-center w-full">
         <span className="mr-2 flex-shrink-0">{getFileIcon(file.name)}</span>
@@ -66,8 +75,8 @@ export const FileItem = ({ file, path, onContextMenu, level }) => {
         )}
       </div>
     </li>
-  )
-}
+  );
+};
 
 FileItem.propTypes = {
   file: PropTypes.shape({
@@ -79,5 +88,4 @@ FileItem.propTypes = {
   path: PropTypes.array.isRequired,
   onContextMenu: PropTypes.func,
   level: PropTypes.number,
-}
-
+};
