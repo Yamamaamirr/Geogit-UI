@@ -66,7 +66,7 @@ export default function AboutSection() {
               <img
                 alt="Geogit Intelli Map Interface"
                 className="relative rounded-xl w-full aspect-video object-cover object-center"
-                src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-BTu5s87Qq0w3PKgdWh6rdWTJaQhnoU.png"
+                src="d3xletxwmpl6xfmu8j8f.jpg"
               />
             </div>
 

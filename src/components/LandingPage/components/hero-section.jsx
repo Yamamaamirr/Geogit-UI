@@ -112,8 +112,8 @@ export default function HeroSection() {
               <div className="pt-10">
                 <img
                   alt="Geogit Intelli Platform Interface"
-                  className="relative rounded-xl w-full aspect-[4/3] object-cover object-center"
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-BTu5s87Qq0w3PKgdWh6rdWTJaQhnoU.png"
+                  className="relative rounded-xl w-full aspect-[5/3] object-cover object-center"
+                  src="heropic.jpg"
                 />
               </div>
             </div>
