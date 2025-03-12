@@ -1,6 +1,9 @@
 import PropTypes from "prop-types";
-import { FileText, FileCode, FileJson, FileImage, FileArchive, FileCog, FileIcon, Map, Globe } from "lucide-react";
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { 
+  FileText, FileCode, FileJson, FileImage, FileArchive, FileCog, FileIcon, Map, Globe, Loader 
+} from "lucide-react";
 
 // Map file extensions to icons
 const getFileIcon = (fileName) => {
@@ -51,30 +54,45 @@ const getFileIcon = (fileName) => {
 };
 
 export const FileItem = ({ file, path, onContextMenu, level }) => {
-  const navigate = useNavigate(); // Initialize the navigate function
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  // Handle click event to navigate to MapPage
   const handleClick = () => {
-    navigate('/map'); // Navigate to the MapPage
+    setLoading(true);
+    setTimeout(() => {
+      navigate('/map'); // Navigate after 1.5s
+    }, 1500);
   };
 
   return (
-    <li
-      className="group flex items-center py-1.5 px-2 hover:bg-github-navHighlight cursor-pointer transition-colors border-b border-github-border/10 last:border-b-0"
-      onContextMenu={(e) => onContextMenu(e, file)}
-      onClick={handleClick} // Add onClick handler
-    >
-      <div className="flex items-center w-full">
-        <span className="mr-2 flex-shrink-0">{getFileIcon(file.name)}</span>
-        <span className="flex-grow truncate text-sm text-github-fg group-hover:text-github-fg">{file.name}</span>
-        {file.lastCommit && (
-          <div className="hidden md:flex items-center text-xs text-github-fgMuted ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="truncate max-w-[200px]">{file.lastCommit}</span>
-            {file.timestamp && <span className="ml-2 whitespace-nowrap">{file.timestamp}</span>}
-          </div>
-        )}
-      </div>
-    </li>
+    <>
+      {/* Fullscreen Loader */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 backdrop-blur-md z-50">
+          <Loader className="h-8 w-8 text-[#0c94d4] animate-spin" />
+        </div>
+      )}
+
+      {/* File Item */}
+      <li
+        className="group flex items-center py-1.5 px-2 hover:bg-github-navHighlight cursor-pointer transition-colors border-b border-github-border/10 last:border-b-0"
+        onContextMenu={(e) => onContextMenu(e, file)}
+        onClick={handleClick} // Add spinner-triggering onClick
+      >
+        <div className="flex items-center w-full">
+          <span className="mr-2 flex-shrink-0">{getFileIcon(file.name)}</span>
+          <span className="flex-grow truncate text-sm text-github-fg group-hover:text-github-fg">
+            {file.name}
+          </span>
+          {file.lastCommit && (
+            <div className="hidden md:flex items-center text-xs text-github-fgMuted ml-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="truncate max-w-[200px]">{file.lastCommit}</span>
+              {file.timestamp && <span className="ml-2 whitespace-nowrap">{file.timestamp}</span>}
+            </div>
+          )}
+        </div>
+      </li>
+    </>
   );
 };
 
