@@ -145,6 +145,11 @@ export default function MapPage() {
     }
   }
 
+  // Handle updates to GeoJSON from the Map component
+  const handleUpdateGeoJSON = (updatedGeoJSON) => {
+    setUploadedGeoJSON(updatedGeoJSON)
+  }
+
   return (
     <div className="flex flex-col h-screen bg-white text-black">
       <Navbar toggleSidebar={toggleSidebar} />
@@ -156,7 +161,12 @@ export default function MapPage() {
           activeFile={activeFile}
           onFileUpload={handleFileUpload}
         />
-        <Map activeFile={activeFile} isSidebarOpen={isSidebarOpen} uploadedGeoJSON={uploadedGeoJSON} />
+        <Map
+          activeFile={activeFile}
+          isSidebarOpen={isSidebarOpen}
+          uploadedGeoJSON={uploadedGeoJSON}
+          onUpdateGeoJSON={handleUpdateGeoJSON}
+        />
       </div>
       <ChatBot isOpen={isChatOpen} toggleChat={toggleChat} />
     </div>

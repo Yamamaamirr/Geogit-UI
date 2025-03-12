@@ -1,6 +1,9 @@
+"use client"
+
 import React, { useRef, useEffect, useState } from "react"
 import mapboxgl from "mapbox-gl" // Import Mapbox GL JS
-import { MapPin, Plus, Minus, Layers, Compass, Move } from "lucide-react"
+import MapboxDraw from "@mapbox/mapbox-gl-draw" // Import Mapbox Draw
+import { MapPin, Plus, Minus, Layers, Compass, Move, Circle, Square, Trash2, PenLine } from "lucide-react"
 
 // Set your Mapbox access token
 mapboxgl.accessToken = "pk.eyJ1IjoidGFsaGF3YXFxYXMxNCIsImEiOiJjbHBreHhscWEwMWU4MnFyenU3ODdmeTdsIn0.8IlEgMNGcbx806t363hDJg"
@@ -8,6 +11,7 @@ mapboxgl.accessToken = "pk.eyJ1IjoidGFsaGF3YXFxYXMxNCIsImEiOiJjbHBreHhscWEwMWU4M
 const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
   const mapContainer = useRef(null) // Ref for the map container
   const [map, setMap] = useState(null) // State to hold the map instance
+  const [draw, setDraw] = useState(null) // State to hold the Draw instance
 
   // Initialize the map when the component mounts
   useEffect(() => {
@@ -15,15 +19,30 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
       container: mapContainer.current, // Container ID
       style: "mapbox://styles/mapbox/streets-v11", // Map style
       center: activeFile?.coordinates || [0, 0], // Initial center
-      zoom: 10, // Initial zoom level
+      zoom: 2, // Initial zoom level
     })
 
     // Disable default zoom and rotation controls
     map.dragRotate.disable()
     map.touchZoomRotate.disableRotation()
 
-    // Set the map instance in state
+    // Initialize Mapbox Draw
+    const draw = new MapboxDraw({
+      displayControlsDefault: false, // Hide default controls
+      controls: {
+        point: false, // Disable default point control
+        line_string: false, // Disable default line control
+        polygon: false, // Disable default polygon control
+        trash: false, // Disable default delete control
+      },
+    })
+
+    // Add Draw control to the map
+    map.addControl(draw)
+
+    // Set the map and Draw instances in state
     setMap(map)
+    setDraw(draw)
 
     // Clean up on unmount
     return () => map.remove()
@@ -37,7 +56,7 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
         zoom: 12,
       })
 
-    
+  
     }
   }, [activeFile, map])
 
@@ -70,20 +89,15 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
         return // 🚀 Wait until map is ready
       }
 
-      // Generate unique IDs for the layer and source
-      const sourceId = `geojson-source-${uploadedGeoJSON.id || Date.now()}`
-      const layerId = `geojson-layer-${uploadedGeoJSON.id || Date.now()}`
-
       // ✅ Check if the layer/source already exists before removing
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId)
+      if (map.getLayer("geojson-layer")) {
+        map.removeLayer("geojson-layer")
       }
-      if (map.getSource(sourceId)) {
-        map.removeSource(sourceId)
+      if (map.getSource("geojson-source")) {
+        map.removeSource("geojson-source")
       }
 
-      // Add the new source
-      map.addSource(sourceId, {
+      map.addSource("geojson-source", {
         type: "geojson",
         data: uploadedGeoJSON,
       })
@@ -93,9 +107,9 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
 
       if (firstFeatureType === "Polygon") {
         map.addLayer({
-          id: layerId,
+          id: "geojson-layer",
           type: "fill",
-          source: sourceId,
+          source: "geojson-source",
           paint: {
             "fill-color": "#3F51B5",
             "fill-opacity": 0.5,
@@ -103,9 +117,9 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
         })
       } else if (firstFeatureType === "LineString") {
         map.addLayer({
-          id: layerId,
+          id: "geojson-layer",
           type: "line",
-          source: sourceId,
+          source: "geojson-source",
           paint: {
             "line-color": "#3F51B5",
             "line-width": 2,
@@ -113,9 +127,9 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
         })
       } else if (firstFeatureType === "Point") {
         map.addLayer({
-          id: layerId,
+          id: "geojson-layer",
           type: "circle",
-          source: sourceId,
+          source: "geojson-source",
           paint: {
             "circle-radius": 6,
             "circle-color": "#3F51B5",
@@ -148,6 +162,56 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
     }
   }, [uploadedGeoJSON, map])
 
+  // Handle draw events
+  useEffect(() => {
+    if (map && draw) {
+      // Listen for draw creation events
+      map.on("draw.create", (e) => {
+        const features = draw.getAll() // Get all drawn features
+        console.log("Drawn features:", features)
+        // You can store these features in state or send them to a backend
+      })
+
+      // Listen for draw update events
+      map.on("draw.update", (e) => {
+        const features = draw.getAll() // Get all drawn features
+        console.log("Updated features:", features)
+      })
+
+      // Listen for draw delete events
+      map.on("draw.delete", (e) => {
+        const features = draw.getAll() // Get all drawn features
+        console.log("Deleted features:", features)
+      })
+    }
+  }, [map, draw])
+
+  // Custom drawing controls
+  const handleDrawPoint = () => {
+    if (draw) {
+      draw.changeMode("draw_point")
+    }
+  }
+
+  const handleDrawLine = () => {
+    if (draw) {
+      draw.changeMode("draw_line_string")
+    }
+  }
+
+  const handleDrawPolygon = () => {
+    if (draw) {
+      draw.changeMode("draw_polygon")
+    }
+  }
+
+  const handleDelete = () => {
+    if (draw) {
+      draw.changeMode("simple_select") // Switch to select mode
+      draw.deleteAll() // Delete all drawn features
+    }
+  }
+
   return (
     <main
       className={`flex-1 bg-gray-50 relative overflow-hidden transition-all duration-300 "ml-64"
@@ -176,6 +240,7 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
 
       {/* Map controls - Moved to top-right */}
       <div className="absolute top-6 right-6 flex flex-col gap-2">
+        {/* Zoom controls */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <button
             onClick={handleZoomIn}
@@ -191,15 +256,31 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
           </button>
         </div>
 
+        {/* Drawing controls */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <button className="p-2 hover:bg-gray-100 transition-colors border-b border-gray-100 w-10 h-10 flex items-center justify-center">
-            <Layers size={18} />
+          <button
+            onClick={handleDrawPoint}
+            className="p-2 hover:bg-gray-100 transition-colors border-b border-gray-100 w-10 h-10 flex items-center justify-center"
+          >
+            <Circle size={18} />
           </button>
-          <button className="p-2 hover:bg-gray-100 transition-colors border-b border-gray-100 w-10 h-10 flex items-center justify-center">
-            <Compass size={18} />
+          <button
+            onClick={handleDrawLine}
+            className="p-2 hover:bg-gray-100 transition-colors border-b border-gray-100 w-10 h-10 flex items-center justify-center"
+          >
+            <PenLine size={18} />
           </button>
-          <button className="p-2 hover:bg-gray-100 transition-colors w-10 h-10 flex items-center justify-center">
-            <Move size={18} />
+          <button
+            onClick={handleDrawPolygon}
+            className="p-2 hover:bg-gray-100 transition-colors border-b border-gray-100 w-10 h-10 flex items-center justify-center"
+          >
+            <Square size={18} />
+          </button>
+          <button
+            onClick={handleDelete}
+            className="p-2 hover:bg-gray-100 transition-colors w-10 h-10 flex items-center justify-center"
+          >
+            <Trash2 size={18} />
           </button>
         </div>
       </div>
