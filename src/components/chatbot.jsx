@@ -44,17 +44,17 @@ const ChatBot = ({ isOpen, toggleChat,uploadedZipFile,handleFileUpload }) => {
     };
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
   
     // Create FormData object
     const formData = new FormData();
-    formData.append("file", uploadedZipFile); // Append the uploaded ZIP file
-    formData.append("prompt", input); // Append the chat prompt
+    formData.append("file", uploadedZipFile);
+    formData.append("prompt", input);
   
     try {
       const response = await fetch("http://10.7.236.247:5000/process", {
         method: "POST",
-        body: formData, // Send FormData object
+        body: formData,
       });
   
       if (!response.ok) {
@@ -62,22 +62,32 @@ const ChatBot = ({ isOpen, toggleChat,uploadedZipFile,handleFileUpload }) => {
       }
   
       // Handle the returned file
-      const fileBlob = await response.blob(); // Get the file as a Blob
-  
-      // Log the response and file details
+      const fileBlob = await response.blob();
       console.log("Backend response:", response);
       console.log("File Blob:", fileBlob);
   
-      // Convert Blob to File with the correct name and extension
-      const fileName = "output.zip"; // Set the expected file name and extension
+      // Convert Blob to File
+      const fileName = "output.zip";
       const file = new File([fileBlob], fileName, { type: fileBlob.type });
   
-      // Log the converted File object
       console.log("Converted File:", file);
   
-      // Pass the File object to handleFileUpload
+      // Pass file to handleFileUpload
       handleFileUpload(file);
   
+      // Send the ZIP file to /push (fire-and-forget request)
+      const pushFormData = new FormData();
+      pushFormData.append("shapefileZip", uploadedZipFile);
+      pushFormData.append("commitMessage", "Processed file push");
+  
+      fetch("http://10.7.236.206:3000/push", {
+        method: "POST",
+        body: pushFormData,
+      }).catch((error) => {
+        console.error("Error sending ZIP file to /push:", error);
+      });
+  
+      // Add bot response
       const botMessage = {
         id: Date.now() + 1,
         text: "Your request has been processed successfully!",
@@ -95,9 +105,10 @@ const ChatBot = ({ isOpen, toggleChat,uploadedZipFile,handleFileUpload }) => {
       };
       setMessages((prev) => [...prev, botMessage]);
     } finally {
-      setIsLoading(false); // Stop loading
+      setIsLoading(false);
     }
   };
+  
   return (
     <div className="fixed bottom-6 right-6 z-10">
       {isOpen ? (

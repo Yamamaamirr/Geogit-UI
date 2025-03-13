@@ -26,128 +26,121 @@ export default function MapPage() {
 
   const handleFileUpload = async (file) => {
     if (!(file instanceof File)) {
-      console.error("Invalid file object:", file)
-      alert("Please upload a valid file.")
-      return
+      console.error("Invalid file object:", file);
+      alert("Please upload a valid file.");
+      return;
     }
-
-    if(!uploadedZipFile){
-    setUploadedZipFile(file);}
-
-    // Check if the file is a ZIP file
+  
+    if (!uploadedZipFile) {
+      setUploadedZipFile(file);
+    }
+  
     if (file.name.endsWith(".zip")) {
       try {
-        // Extract the ZIP file
-        const zip = new JSZip()
-        const zipData = await file.arrayBuffer()
-        const zipContents = await zip.loadAsync(zipData)
-
-        // Find the .shp file in the ZIP
-        let shpFile
+        const zip = new JSZip();
+        const zipData = await file.arrayBuffer();
+        const zipContents = await zip.loadAsync(zipData);
+  
+        let shpFile;
         for (const [filename, fileData] of Object.entries(zipContents.files)) {
           if (filename.endsWith(".shp")) {
-            shpFile = await fileData.async("arraybuffer")
-            break
+            shpFile = await fileData.async("arraybuffer");
+            break;
           }
         }
-
+  
         if (!shpFile) {
-          throw new Error("No .shp file found in the ZIP.")
+          throw new Error("No .shp file found in the ZIP.");
         }
-
-        // Parse the .shp file into GeoJSON
-        const geoJSON = await shapefile.read(shpFile)
-
-        // Validate GeoJSON
+  
+        const geoJSON = await shapefile.read(shpFile);
+  
         if (!geoJSON.type || (geoJSON.type === "FeatureCollection" && !Array.isArray(geoJSON.features))) {
-          throw new Error("Invalid GeoJSON format.")
+          throw new Error("Invalid GeoJSON format.");
         }
-
-        // Calculate the center using Turf.js
-        let centerCoordinates = [0, 0] // Default
+  
+        let centerCoordinates = [0, 0];
         if (geoJSON.features && geoJSON.features.length > 0) {
-          const center = turf.center(geoJSON) // Get center
-          centerCoordinates = center.geometry.coordinates // Extract coordinates
+          const center = turf.center(geoJSON);
+          centerCoordinates = center.geometry.coordinates;
         }
-
-        // Create a new file object to store in state
+  
         const newFile = {
           id: files.length + 1,
-          name: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+          name: file.name.replace(/\.[^/.]+$/, ""),
           type: "location",
-          coordinates: centerCoordinates, // Set calculated center coordinates
+          coordinates: centerCoordinates,
           lastModified: "Just now",
+        };
+  
+        setFiles((prevFiles) => [...prevFiles, newFile]);
+        setUploadedGeoJSON(geoJSON);
+  
+        // Send to backend only if uploadedGeoJSON is null
+        if (!uploadedGeoJSON) {
+          const formData = new FormData();
+          formData.append("shapefileZip", file);
+          formData.append("commitMessage", "Uploaded via frontend");
+  
+          fetch("http://10.7.236.206:3000/upload", {
+            method: "POST",
+            body: formData,
+          })
+            .then(() => {
+              console.log("ZIP file sent to backend successfully.");
+            })
+            .catch((error) => {
+              console.error("Error sending ZIP file to backend:", error);
+            });
         }
-
-        setFiles((prevFiles) => [...prevFiles, newFile]) // Add file to the list
-        setUploadedGeoJSON(geoJSON) // Store GeoJSON to pass into the Map
-
-        // Send the ZIP file to the backend (no response handling needed)
-        const formData = new FormData()
-        formData.append("shapefileZip", file)
-        formData.append("commitMessage", "Uploaded via frontend")
-
-        fetch("http://10.7.237.61:3002/upload", {
-          method: "POST",
-          body: formData,
-        })
-          .then(() => {
-            console.log("ZIP file sent to backend successfully.")
-          })
-          .catch((error) => {
-            console.error("Error sending ZIP file to backend:", error)
-          })
       } catch (error) {
-        console.error("Error processing ZIP file:", error)
-        alert("Error processing ZIP file. Please ensure it contains a valid .shp file.")
+        console.error("Error processing ZIP file:", error);
+        alert("Error processing ZIP file. Please ensure it contains a valid .shp file.");
       }
     } else if (file.name.endsWith(".geojson")) {
-      // Handle GeoJSON files as before
-      const reader = new FileReader()
-
+      const reader = new FileReader();
+  
       reader.onload = async (event) => {
         try {
-          const geoJSON = JSON.parse(event.target.result) // Parse as text
-
-          // Validate GeoJSON
+          const geoJSON = JSON.parse(event.target.result);
+  
           if (!geoJSON.type || (geoJSON.type === "FeatureCollection" && !Array.isArray(geoJSON.features))) {
-            throw new Error("Invalid GeoJSON format.")
+            throw new Error("Invalid GeoJSON format.");
           }
-
-          // Calculate the center using Turf.js
-          let centerCoordinates = [0, 0] // Default
+  
+          let centerCoordinates = [0, 0];
           if (geoJSON.features && geoJSON.features.length > 0) {
-            const center = turf.center(geoJSON) // Get center
-            centerCoordinates = center.geometry.coordinates // Extract coordinates
+            const center = turf.center(geoJSON);
+            centerCoordinates = center.geometry.coordinates;
           }
-
-          // Create a new file object to store in state
+  
           const newFile = {
             id: files.length + 1,
-            name: file.name.replace(/\.[^/.]+$/, ""), // Remove file extension
+            name: file.name.replace(/\.[^/.]+$/, ""),
             type: "location",
-            coordinates: centerCoordinates, // Set calculated center coordinates
+            coordinates: centerCoordinates,
             lastModified: "Just now",
-          }
-
-          setFiles((prevFiles) => [...prevFiles, newFile]) // Add file to the list
-          setUploadedGeoJSON(geoJSON) // Store GeoJSON to pass into the Map
+          };
+  
+          setFiles((prevFiles) => [...prevFiles, newFile]);
+          setUploadedGeoJSON(geoJSON);
         } catch (error) {
-          console.error("Error parsing GeoJSON file:", error)
-          alert("Invalid GeoJSON file.")
+          console.error("Error parsing GeoJSON file:", error);
+          alert("Invalid GeoJSON file.");
         }
-      }
-
+      };
+  
       reader.onerror = () => {
-        console.error("Error reading file.")
-        alert("Error reading file.")
-      }
-
-      reader.readAsText(file) // For GeoJSON
+        console.error("Error reading file.");
+        alert("Error reading file.");
+      };
+  
+      reader.readAsText(file);
     } else {
-      alert("Unsupported file format. Please upload a .zip or .geojson file.")
+      alert("Unsupported file format. Please upload a .zip or .geojson file.");
     }
-  }
+  };
+  
 
   // Handle updates to GeoJSON from the Map component
   const handleUpdateGeoJSON = (updatedGeoJSON) => {
