@@ -111,7 +111,7 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
           type: "fill",
           source: "geojson-source",
           paint: {
-            "fill-color": "#3F51B5",
+            "fill-color": "#1d0563",
             "fill-opacity": 0.5,
           },
         })
@@ -121,8 +121,8 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
           type: "line",
           source: "geojson-source",
           paint: {
-            "line-color": "#3F51B5",
-            "line-width": 2,
+            "line-color": "#6d6b08",
+            "line-width": 4,
           },
         })
       } else if (firstFeatureType === "Point") {
@@ -132,7 +132,7 @@ const Map = ({ activeFile, isSidebarOpen, uploadedGeoJSON }) => {
           source: "geojson-source",
           paint: {
             "circle-radius": 6,
-            "circle-color": "#3F51B5",
+            "circle-color": "#f7bd00",
           },
         })
       }
