@@ -15,6 +15,7 @@ export default function MapPage() {
   const [activeFile, setActiveFile] = React.useState(null)
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true)
   const [uploadedGeoJSON, setUploadedGeoJSON] = React.useState(null)
+  const [uploadedZipFile, setUploadedZipFile] = React.useState(null); // Add this state
 
   const toggleChat = () => setIsChatOpen(!isChatOpen)
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
@@ -29,6 +30,9 @@ export default function MapPage() {
       alert("Please upload a valid file.")
       return
     }
+
+    if(!uploadedZipFile){
+    setUploadedZipFile(file);}
 
     // Check if the file is a ZIP file
     if (file.name.endsWith(".zip")) {
@@ -168,7 +172,7 @@ export default function MapPage() {
           onUpdateGeoJSON={handleUpdateGeoJSON}
         />
       </div>
-      <ChatBot isOpen={isChatOpen} toggleChat={toggleChat} />
+      <ChatBot isOpen={isChatOpen} toggleChat={toggleChat} uploadedZipFile={uploadedZipFile}  handleFileUpload={handleFileUpload}/>
     </div>
   )
 }

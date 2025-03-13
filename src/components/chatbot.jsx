@@ -1,9 +1,9 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { MessageSquare, Send, X, Paperclip, Smile, ChevronDown, MoreHorizontal, Image, MapPin } from "lucide-react"
+import { MessageSquare, Send, X, Smile, ChevronDown, MoreHorizontal } from "lucide-react"
 
-const ChatBot = ({ isOpen, toggleChat }) => {
+const ChatBot = ({ isOpen, toggleChat,uploadedZipFile,handleFileUpload }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -13,7 +13,7 @@ const ChatBot = ({ isOpen, toggleChat }) => {
     },
   ])
   const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false) // Loading state
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -32,119 +32,129 @@ const ChatBot = ({ isOpen, toggleChat }) => {
   }, [isOpen])
 
   const handleSend = async (e) => {
-    e?.preventDefault()
-    if (!input.trim()) return
-
+    e?.preventDefault();
+    if (!input.trim()) return;
+  
     // Add user message
     const userMessage = {
       id: Date.now(),
       text: input,
       isBot: false,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    }
-    setMessages([...messages, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    // Simulate typing indicator
-    const typingMessage = { id: "typing", isTyping: true, isBot: true }
-    setMessages((prev) => [...prev, typingMessage])
-
-    // Send user input to backend (placeholder)
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsLoading(true); // Start loading
+  
+    // Create FormData object
+    const formData = new FormData();
+    formData.append("file", uploadedZipFile); // Append the uploaded ZIP file
+    formData.append("prompt", input); // Append the chat prompt
+  
     try {
-      const response = await fetch("/api/chat", {
+      const response = await fetch("http://10.7.236.247:5000/process", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
-      })
-      const data = await response.json()
-
-      // Remove typing indicator
-      setMessages((prev) => prev.filter((msg) => msg.id !== "typing"))
-
-      // Add bot response
+        body: formData, // Send FormData object
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to fetch response from backend");
+      }
+  
+      // Handle the returned file
+      const fileBlob = await response.blob(); // Get the file as a Blob
+  
+      // Log the response and file details
+      console.log("Backend response:", response);
+      console.log("File Blob:", fileBlob);
+  
+      // Convert Blob to File with the correct name and extension
+      const fileName = "output.zip"; // Set the expected file name and extension
+      const file = new File([fileBlob], fileName, { type: fileBlob.type });
+  
+      // Log the converted File object
+      console.log("Converted File:", file);
+  
+      // Pass the File object to handleFileUpload
+      handleFileUpload(file);
+  
       const botMessage = {
         id: Date.now() + 1,
-        text: data.response,
+        text: "Your request has been processed successfully!",
         isBot: true,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      }
-      setMessages((prev) => [...prev, botMessage])
+      };
+      setMessages((prev) => [...prev, botMessage]);
     } catch (error) {
-      console.error("Error fetching bot response:", error)
-      setMessages((prev) => prev.filter((msg) => msg.id !== "typing"))
+      console.error("Error fetching response:", error);
       const botMessage = {
         id: Date.now() + 1,
-        text: "Sorry, something went wrong. Please try again.",
+        text: "Sorry, I couldn't process your request. Please try again later.",
         isBot: true,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      }
-      setMessages((prev) => [...prev, botMessage])
+      };
+      setMessages((prev) => [...prev, botMessage]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false); // Stop loading
     }
-  }
-
+  };
   return (
-    <>
-      {/* Chat toggle button */}
-      {!isOpen && (
-        <button
-          onClick={toggleChat}
-          className="fixed right-6 bottom-6 bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 z-50"
-          aria-label="Open chat"
-        >
-          <MessageSquare size={22} />
-        </button>
-      )}
-
-      {/* Chat sidebar */}
-      <div
-        className={`fixed inset-y-0 right-0 w-96 bg-white text-black shadow-xl transform transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0" : "translate-x-full"
-        } z-40`}
-      >
-        {/* Chat header */}
-        <div className="bg-black text-white p-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center mr-3 shadow-inner">
-              <MessageSquare size={18} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-medium">Map Assistant</h3>
-              <div className="text-xs text-gray-300 flex items-center">
-                <span className="h-1.5 w-1.5 rounded-full bg-green-400 mr-1.5"></span>
-                Online now
+    <div className="fixed bottom-6 right-6 z-10">
+      {isOpen ? (
+        <div className="bg-white rounded-2xl shadow-xl w-96 h-[450px] flex flex-col overflow-hidden animate-fadeIn">
+          {/* Chat header */}
+          <div className="bg-black text-white p-4 flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center mr-3 shadow-inner">
+                <MessageSquare size={18} className="text-white" />
+              </div>
+              <div>
+                <h3 className="font-medium">Map Assistant</h3>
+                <div className="text-xs text-gray-300 flex items-center">
+                  <span className="h-1.5 w-1.5 rounded-full bg-green-400 mr-1.5"></span>
+                  Online now
+                </div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1">
-            <button className="hover:bg-gray-800 p-1.5 rounded-full transition-colors" aria-label="Chat options">
-              <MoreHorizontal size={16} />
-            </button>
-            <button className="hover:bg-gray-800 p-1.5 rounded-full transition-colors" aria-label="Minimize chat">
-              <ChevronDown size={16} />
-            </button>
-            <button
-              onClick={toggleChat}
-              className="hover:bg-gray-800 p-1.5 rounded-full transition-colors"
-              aria-label="Close chat"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Chat messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 h-[calc(100vh-136px)]">
-          <div className="text-xs text-center text-gray-500 my-2">Today</div>
-
-          {messages.map((message) =>
-            message.isTyping ? (
-              <div
-                key="typing"
-                className="flex items-center space-x-2 p-3 rounded-2xl bg-gray-100 text-black max-w-[80%] animate-fadeIn"
+            <div className="flex items-center gap-1">
+              <button className="hover:bg-gray-800 p-1.5 rounded-full transition-colors" aria-label="Chat options">
+                <MoreHorizontal size={16} />
+              </button>
+              <button className="hover:bg-gray-800 p-1.5 rounded-full transition-colors" aria-label="Minimize chat">
+                <ChevronDown size={16} />
+              </button>
+              <button
+                onClick={toggleChat}
+                className="hover:bg-gray-800 p-1.5 rounded-full transition-colors"
+                aria-label="Close chat"
               >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Chat messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            <div className="text-xs text-center text-gray-500 my-2">Today</div>
+
+            {messages.map((message) => (
+              <div key={message.id} className={`flex flex-col ${message.isBot ? "" : "items-end"}`}>
+                <div
+                  className={`p-3.5 rounded-2xl max-w-[85%] shadow-sm ${
+                    message.isBot
+                      ? "bg-white text-black rounded-tl-none border border-gray-100"
+                      : "bg-black text-white rounded-tr-none"
+                  }`}
+                >
+                  {message.text}
+                </div>
+                <div className="text-xs text-gray-400 mt-1 px-1">{message.timestamp}</div>
+              </div>
+            ))}
+
+            {/* Loading indicator */}
+            {isLoading && (
+              <div className="flex items-center space-x-2 p-3 rounded-2xl bg-gray-100 text-black max-w-[80%] animate-fadeIn">
                 <div className="flex space-x-1">
                   <div
                     className="h-2 w-2 rounded-full bg-gray-400 animate-bounce"
@@ -160,77 +170,32 @@ const ChatBot = ({ isOpen, toggleChat }) => {
                   ></div>
                 </div>
               </div>
-            ) : (
-              <div key={message.id} className={`flex flex-col ${message.isBot ? "" : "items-end"}`}>
-                <div
-                  className={`p-3.5 rounded-2xl max-w-[85%] shadow-sm ${
-                    message.isBot
-                      ? "bg-white text-black rounded-tl-none border border-gray-100"
-                      : "bg-black text-white rounded-tr-none"
-                  }`}
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Chat input */}
+          <div className="border-t border-gray-100 bg-white p-3">
+            <form onSubmit={handleSend} className="flex items-center gap-2">
+              <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-full px-4 py-2 border border-gray-100">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm"
+                />
+
+                <button
+                  type="button"
+                  className="p-1.5 rounded-full hover:bg-gray-200 transition-colors text-gray-500"
+                  aria-label="Insert emoji"
                 >
-                  {message.text}
-                </div>
-                <div className="text-xs text-gray-400 mt-1 px-1">{message.timestamp}</div>
+                  <Smile size={16} />
+                </button>
               </div>
-            ),
-          )}
-
-          {isLoading && (
-            <div className="flex items-center space-x-2 p-3 rounded-2xl bg-gray-100 text-black max-w-[80%] animate-fadeIn">
-              <span className="text-sm">...</span>
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Chat input */}
-        <div className="border-t border-gray-100 bg-white p-3">
-          <form onSubmit={handleSend} className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-full px-4 py-2 border border-gray-100">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 bg-transparent border-none focus:outline-none focus:ring-0 text-sm"
-              />
-
-              <button
-                type="button"
-                className="p-1.5 rounded-full hover:bg-gray-200 transition-colors text-gray-500"
-                aria-label="Insert emoji"
-              >
-                <Smile size={16} />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
-                aria-label="Attach file"
-              >
-                <Paperclip size={18} />
-              </button>
-
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
-                aria-label="Attach image"
-              >
-                <Image size={18} />
-              </button>
-
-              <button
-                type="button"
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-500"
-                aria-label="Share location"
-              >
-                <MapPin size={18} />
-              </button>
 
               <button
                 type="submit"
@@ -244,11 +209,19 @@ const ChatBot = ({ isOpen, toggleChat }) => {
               >
                 <Send size={16} />
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
-      </div>
-    </>
+      ) : (
+        <button
+          onClick={toggleChat}
+          className="bg-black text-white p-4 rounded-full shadow-lg hover:bg-gray-800 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+          aria-label="Open chat"
+        >
+          <MessageSquare size={22} />
+        </button>
+      )}
+    </div>
   )
 }
 
